@@ -4,23 +4,29 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  id-token: write   # REQUIRED for OIDC
+  contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout source
+      uses: actions/checkout@v4
 
-    - uses: aws-actions/configure-aws-credentials@v4
+    - name: Configure AWS credentials via OIDC
+      uses: aws-actions/configure-aws-credentials@v4
       with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
         aws-region: us-east-1
 
-    - uses: aws-actions/amazon-ecr-login@v2
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Build & Push Image
+    - name: Build & Push Docker Image
       run: |
         docker build -t autoops-web app/
-        docker tag autoops-web:latest ${{ secrets.ECR_REPO }}:latest
-        docker push ${{ secrets.ECR_REPO }}:latest
+        docker tag autoops-web:latest 605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest
+        docker push 605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest

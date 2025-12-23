@@ -22,5 +22,10 @@ resource "aws_apprunner_service" "autoops" {
     cpu    = "1024"
     memory = "2048"
   }
-}
 
+  lifecycle {
+    ignore_changes = [
+      source_configuration[0].image_repository[0].image_identifier
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 ############################################
-# App Runner Service Role
+# App Runner ECR Access Role (REQUIRED)
 ############################################
 
 resource "aws_iam_role" "apprunner_role" {
@@ -7,13 +7,15 @@ resource "aws_iam_role" "apprunner_role" {
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "tasks.apprunner.amazonaws.com"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "build.apprunner.amazonaws.com"
+        }
+        Action = "sts:AssumeRole"
       }
-      Action = "sts:AssumeRole"
-    }]
+    ]
   })
 }
 

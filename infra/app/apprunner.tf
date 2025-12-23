@@ -23,3 +23,6 @@ resource "aws_apprunner_service" "autoops" {
     memory = "2048"
   }
 }
+
+
+

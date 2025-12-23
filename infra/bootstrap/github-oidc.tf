@@ -76,18 +76,20 @@ resource "aws_iam_policy" "terraform_ci_policy" {
       },
 
       # IAM (ONLY for autoops roles)
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:GetRole",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:PassRole"
-        ]
-        Resource = "arn:aws:iam::*:role/autoops-*"
-      },
+     {
+  Effect = "Allow"
+  Action = [
+    "iam:CreateRole",
+    "iam:DeleteRole",
+    "iam:GetRole",
+    "iam:ListRolePolicies",
+    "iam:ListAttachedRolePolicies",
+    "iam:AttachRolePolicy",
+    "iam:DetachRolePolicy",
+    "iam:PassRole"
+  ]
+  Resource = "arn:aws:iam::*:role/autoops-*"
+},
 
       # App Runner
       {

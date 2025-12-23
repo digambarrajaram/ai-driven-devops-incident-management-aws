@@ -1,5 +1,9 @@
 name: CI/CD - AutoOps Web App
 
+concurrency:
+  group: terraform-autoops
+  cancel-in-progress: false
+
 on:
   push:
     branches: [ "main" ]
@@ -33,13 +37,30 @@ jobs:
         aws-region: us-east-1
 
     # ----------------------------
-    # Login to Amazon ECR
+    # Terraform Setup
+    # ----------------------------
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init (Remote Backend)
+      working-directory: infra/app
+      run: terraform init
+
+    # ----------------------------
+    # STEP 1: Create ECR Repository ONLY
+    # ----------------------------
+    - name: Terraform Apply (ECR only)
+      working-directory: infra/app
+      run: terraform apply -target=aws_ecr_repository.autoops -auto-approve
+
+    # ----------------------------
+    # STEP 2: Login to Amazon ECR
     # ----------------------------
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v2
 
     # ----------------------------
-    # Build & Push Docker Image (FIRST)
+    # STEP 3: Build & Push Docker Image
     # ----------------------------
     - name: Build & Push Docker Image
       run: |
@@ -51,24 +72,14 @@ jobs:
         docker push ${ECR_REPO}:latest
 
     # ----------------------------
-    # Terraform Setup
+    # STEP 4: Apply Remaining Terraform (App Runner, IAM, etc.)
     # ----------------------------
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-
-    - name: Terraform Init (Remote Backend)
-      working-directory: infra/app
-      run: terraform init
-
-    # ----------------------------
-    # Terraform Apply (AFTER IMAGE EXISTS)
-    # ----------------------------
-    - name: Terraform Apply
+    - name: Terraform Apply (Full Infra)
       working-directory: infra/app
       run: terraform apply -auto-approve
 
     # ----------------------------
-    # Output App Runner URL
+    # STEP 5: Output App Runner URL
     # ----------------------------
     - name: Fetch App Runner Service URL
       run: |

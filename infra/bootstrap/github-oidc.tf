@@ -1,15 +1,13 @@
-
 ############################################
-# GitHub Actions OIDC Provider
+# GitHub OIDC Provider (Account-wide)
 ############################################
 
 data "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 }
 
-
 ############################################
-# IAM Role for GitHub Actions CI/CD
+# IAM Role for GitHub Actions
 ############################################
 
 resource "aws_iam_role" "github_actions_role" {
@@ -22,7 +20,6 @@ resource "aws_iam_role" "github_actions_role" {
         Effect = "Allow"
         Principal = {
           Federated = data.aws_iam_openid_connect_provider.github.arn
-
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
@@ -36,21 +33,20 @@ resource "aws_iam_role" "github_actions_role" {
 }
 
 ############################################
-# IAM Policies for CI/CD
+# Permissions for CI/CD
 ############################################
 
-resource "aws_iam_role_policy_attachment" "ecr_access" {
+resource "aws_iam_role_policy_attachment" "ecr" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
 }
 
-resource "aws_iam_role_policy_attachment" "apprunner_access" {
+resource "aws_iam_role_policy_attachment" "apprunner" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSAppRunnerFullAccess"
 }
 
-resource "aws_iam_role_policy_attachment" "logs_access" {
+resource "aws_iam_role_policy_attachment" "logs" {
   role       = aws_iam_role.github_actions_role.name
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchLogsFullAccess"
 }
-

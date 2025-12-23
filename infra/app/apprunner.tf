@@ -7,8 +7,8 @@ resource "aws_apprunner_service" "autoops" {
     }
 
     image_repository {
-      image_identifier = "${aws_ecr_repository.autoops.repository_url}:initial"
       image_repository_type = "ECR"
+      image_identifier      = "${aws_ecr_repository.autoops.repository_url}:initial"
 
       image_configuration {
         port = "8080"

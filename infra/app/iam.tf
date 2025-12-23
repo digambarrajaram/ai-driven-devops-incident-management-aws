@@ -1,3 +1,7 @@
+############################################
+# App Runner Service Role
+############################################
+
 resource "aws_iam_role" "apprunner_role" {
   name = "autoops-apprunner-role"
 

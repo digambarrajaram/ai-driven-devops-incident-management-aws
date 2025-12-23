@@ -56,96 +56,92 @@ resource "aws_iam_policy" "terraform_ci_policy" {
     Version = "2012-10-17"
     Statement = [
 
-      ####################################
-      # ECR AUTH (REQUIRED for docker login)
-      ####################################
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:GetAuthorizationToken"
-        ]
-        Resource = "*"
-      },
+  ####################################
+  # ECR – COMPLETE LIFECYCLE (Terraform + Docker)
+  ####################################
+  {
+    Effect = "Allow"
+    Action = [
+      "ecr:GetAuthorizationToken",
 
-      ####################################
-      # ECR REPOSITORY & IMAGE LIFECYCLE
-      ####################################
-      {
-        Effect = "Allow"
-        Action = [
-          "ecr:CreateRepository",
-          "ecr:DescribeRepositories",
-          "ecr:DeleteRepository",
-          "ecr:ListImages",
-          "ecr:BatchDeleteImage",
-          "ecr:PutImageScanningConfiguration",
-          "ecr:TagResource",
-          "ecr:UntagResource",
+      "ecr:CreateRepository",
+      "ecr:DescribeRepositories",
+      "ecr:DeleteRepository",
 
-          "ecr:InitiateLayerUpload",
-          "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload",
-          "ecr:BatchCheckLayerAvailability",
-          "ecr:PutImage"
-        ]
-        Resource = "*"
-      },
+      "ecr:ListImages",
+      "ecr:BatchDeleteImage",
 
-      ####################################
-      # IAM (LIMITED TO autoops-* ROLES)
-      ####################################
-      {
-        Effect = "Allow"
-        Action = [
-          "iam:CreateRole",
-          "iam:DeleteRole",
-          "iam:GetRole",
-          "iam:ListRolePolicies",
-          "iam:ListAttachedRolePolicies",
-          "iam:ListInstanceProfilesForRole",
-          "iam:AttachRolePolicy",
-          "iam:DetachRolePolicy",
-          "iam:PassRole"
-        ]
-        Resource = "arn:aws:iam::*:role/autoops-*"
-      },
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:InitiateLayerUpload",
+      "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload",
+      "ecr:PutImage",
 
-      ####################################
-      # APP RUNNER (FULL SERVICE LIFECYCLE)
-      ####################################
-      {
-        Effect = "Allow"
-        Action = [
-          "apprunner:CreateService",
-          "apprunner:DeleteService",
-          "apprunner:DescribeService",
-          "apprunner:UpdateService",
-          "apprunner:ListServices",
-          "apprunner:StartDeployment",
-          "apprunner:PauseService",
-          "apprunner:ResumeService",
-          "apprunner:ListOperations",
-          "apprunner:DescribeOperation"
-        ]
-        Resource = "*"
-      },
+      "ecr:ListTagsForResource",
+      "ecr:TagResource",
+      "ecr:UntagResource",
 
-      ####################################
-      # CLOUDWATCH (LOGS + METRICS)
-      ####################################
-      {
-        Effect = "Allow"
-        Action = [
-          "logs:CreateLogGroup",
-          "logs:CreateLogStream",
-          "logs:PutLogEvents",
-          "logs:DescribeLogGroups",
-          "logs:DescribeLogStreams",
-          "cloudwatch:*"
-        ]
-        Resource = "*"
-      }
+      "ecr:GetRepositoryPolicy",
+      "ecr:SetRepositoryPolicy"
     ]
+    Resource = "*"
+  },
+
+  ####################################
+  # IAM (LIMITED TO autoops-* ROLES)
+  ####################################
+  {
+    Effect = "Allow"
+    Action = [
+      "iam:CreateRole",
+      "iam:DeleteRole",
+      "iam:GetRole",
+      "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:AttachRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:PassRole"
+    ]
+    Resource = "arn:aws:iam::*:role/autoops-*"
+  },
+
+  ####################################
+  # APP RUNNER
+  ####################################
+  {
+    Effect = "Allow"
+    Action = [
+      "apprunner:CreateService",
+      "apprunner:DeleteService",
+      "apprunner:DescribeService",
+      "apprunner:UpdateService",
+      "apprunner:ListServices",
+      "apprunner:StartDeployment",
+      "apprunner:PauseService",
+      "apprunner:ResumeService",
+      "apprunner:ListOperations",
+      "apprunner:DescribeOperation"
+    ]
+    Resource = "*"
+  },
+
+  ####################################
+  # CLOUDWATCH
+  ####################################
+  {
+    Effect = "Allow"
+    Action = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogGroups",
+      "logs:DescribeLogStreams",
+      "cloudwatch:*"
+    ]
+    Resource = "*"
+  }
+]
   })
 }
 

@@ -1,0 +1,10 @@
+
+.git
+.github
+infra/
+docs/
+*.md
+__pycache__/
+.env
+.terraform/
+*.tfstate

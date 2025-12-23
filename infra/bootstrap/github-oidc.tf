@@ -7,7 +7,7 @@ data "aws_iam_openid_connect_provider" "github" {
 }
 
 ############################################
-# IAM Role for GitHub Actions
+# IAM Role for GitHub Actions (OIDC)
 ############################################
 
 resource "aws_iam_role" "github_actions_role" {
@@ -23,6 +23,9 @@ resource "aws_iam_role" "github_actions_role" {
         }
         Action = "sts:AssumeRoleWithWebIdentity"
         Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
           StringLike = {
             "token.actions.githubusercontent.com:sub" = "repo:digambarrajaram/ai-driven-devops-incident-management-aws:ref:refs/heads/main"
           }
@@ -33,18 +36,8 @@ resource "aws_iam_role" "github_actions_role" {
 }
 
 ############################################
-# Permissions for CI/CD
+# CloudWatch (logs & metrics for CI)
 ############################################
-
-resource "aws_iam_role_policy_attachment" "ecr" {
-  role       = aws_iam_role.github_actions_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser"
-}
-
-resource "aws_iam_role_policy_attachment" "apprunner" {
-  role       = aws_iam_role.github_actions_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AWSAppRunnerFullAccess"
-}
 
 resource "aws_iam_role_policy_attachment" "logs" {
   role       = aws_iam_role.github_actions_role.name
@@ -52,47 +45,56 @@ resource "aws_iam_role_policy_attachment" "logs" {
 }
 
 ############################################
-# Custom policy for Terraform (CI/CD)
+# Custom Policy: Terraform CI Permissions
 ############################################
 
 resource "aws_iam_policy" "terraform_ci_policy" {
   name        = "github-actions-terraform-autoops"
-  description = "Permissions required by Terraform running in GitHub Actions"
+  description = "Terraform apply/destroy permissions for AutoOps CI/CD"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
 
-      # ECR (for Terraform + CI)
+      ####################################
+      # ECR (repo + image lifecycle)
+      ####################################
       {
         Effect = "Allow"
         Action = [
           "ecr:CreateRepository",
           "ecr:DescribeRepositories",
+          "ecr:DeleteRepository",
+          "ecr:ListImages",
+          "ecr:BatchDeleteImage",
           "ecr:PutImageScanningConfiguration",
           "ecr:TagResource"
         ]
         Resource = "*"
       },
 
-      # IAM (ONLY for autoops roles)
-       {
-  Effect = "Allow"
-  Action = [
-    "iam:CreateRole",
-    "iam:DeleteRole",
-    "iam:GetRole",
-    "iam:ListRolePolicies",
-    "iam:ListAttachedRolePolicies",
-    "iam:ListInstanceProfilesForRole",
-    "iam:AttachRolePolicy",
-    "iam:DetachRolePolicy",
-    "iam:PassRole"
-  ]
-  Resource = "arn:aws:iam::*:role/autoops-*"
-},
+      ####################################
+      # IAM (ONLY autoops roles)
+      ####################################
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:GetRole",
+          "iam:ListRolePolicies",
+          "iam:ListAttachedRolePolicies",
+          "iam:ListInstanceProfilesForRole",
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:PassRole"
+        ]
+        Resource = "arn:aws:iam::*:role/autoops-*"
+      },
 
+      ####################################
       # App Runner
+      ####################################
       {
         Effect = "Allow"
         Action = [
@@ -101,7 +103,9 @@ resource "aws_iam_policy" "terraform_ci_policy" {
         Resource = "*"
       },
 
-      # CloudWatch
+      ####################################
+      # CloudWatch (metrics & alarms)
+      ####################################
       {
         Effect = "Allow"
         Action = [
@@ -115,7 +119,7 @@ resource "aws_iam_policy" "terraform_ci_policy" {
 }
 
 ############################################
-# Attach policy to GitHub Actions role
+# Attach Terraform CI Policy
 ############################################
 
 resource "aws_iam_role_policy_attachment" "terraform_ci_attach" {
@@ -123,21 +127,21 @@ resource "aws_iam_role_policy_attachment" "terraform_ci_attach" {
   policy_arn = aws_iam_policy.terraform_ci_policy.arn
 }
 
-
-
 ############################################
-# Terraform Backend Access (S3 + DynamoDB)
+# Custom Policy: Terraform Backend Access
 ############################################
 
 resource "aws_iam_policy" "terraform_backend_policy" {
   name        = "github-actions-terraform-backend"
-  description = "Allow Terraform to access remote state backend"
+  description = "Terraform remote backend access (S3 + DynamoDB)"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
 
-      # S3 state bucket
+      ####################################
+      # S3 backend bucket
+      ####################################
       {
         Effect = "Allow"
         Action = [
@@ -155,7 +159,9 @@ resource "aws_iam_policy" "terraform_backend_policy" {
         Resource = "arn:aws:s3:::autoops-terraform-state-605134452604/*"
       },
 
+      ####################################
       # DynamoDB state locking
+      ####################################
       {
         Effect = "Allow"
         Action = [
@@ -171,7 +177,7 @@ resource "aws_iam_policy" "terraform_backend_policy" {
 }
 
 ############################################
-# Attach backend policy to GitHub role
+# Attach Backend Policy
 ############################################
 
 resource "aws_iam_role_policy_attachment" "terraform_backend_attach" {

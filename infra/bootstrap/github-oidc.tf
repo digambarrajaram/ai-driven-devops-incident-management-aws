@@ -50,14 +50,25 @@ resource "aws_iam_role_policy_attachment" "logs" {
 
 resource "aws_iam_policy" "terraform_ci_policy" {
   name        = "github-actions-terraform-autoops"
-  description = "Terraform apply/destroy permissions for AutoOps CI/CD"
+  description = "Complete permissions for CI/CD + Terraform lifecycle"
 
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
 
       ####################################
-      # ECR (repo + image lifecycle)
+      # ECR AUTH (REQUIRED for docker login)
+      ####################################
+      {
+        Effect = "Allow"
+        Action = [
+          "ecr:GetAuthorizationToken"
+        ]
+        Resource = "*"
+      },
+
+      ####################################
+      # ECR REPOSITORY & IMAGE LIFECYCLE
       ####################################
       {
         Effect = "Allow"
@@ -68,13 +79,20 @@ resource "aws_iam_policy" "terraform_ci_policy" {
           "ecr:ListImages",
           "ecr:BatchDeleteImage",
           "ecr:PutImageScanningConfiguration",
-          "ecr:TagResource"
+          "ecr:TagResource",
+          "ecr:UntagResource",
+
+          "ecr:InitiateLayerUpload",
+          "ecr:UploadLayerPart",
+          "ecr:CompleteLayerUpload",
+          "ecr:BatchCheckLayerAvailability",
+          "ecr:PutImage"
         ]
         Resource = "*"
       },
 
       ####################################
-      # IAM (ONLY autoops roles)
+      # IAM (LIMITED TO autoops-* ROLES)
       ####################################
       {
         Effect = "Allow"
@@ -93,23 +111,36 @@ resource "aws_iam_policy" "terraform_ci_policy" {
       },
 
       ####################################
-      # App Runner
+      # APP RUNNER (FULL SERVICE LIFECYCLE)
       ####################################
       {
         Effect = "Allow"
         Action = [
-          "apprunner:*"
+          "apprunner:CreateService",
+          "apprunner:DeleteService",
+          "apprunner:DescribeService",
+          "apprunner:UpdateService",
+          "apprunner:ListServices",
+          "apprunner:StartDeployment",
+          "apprunner:PauseService",
+          "apprunner:ResumeService",
+          "apprunner:ListOperations",
+          "apprunner:DescribeOperation"
         ]
         Resource = "*"
       },
 
       ####################################
-      # CloudWatch (metrics & alarms)
+      # CLOUDWATCH (LOGS + METRICS)
       ####################################
       {
         Effect = "Allow"
         Action = [
-          "logs:*",
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams",
           "cloudwatch:*"
         ]
         Resource = "*"

@@ -107,24 +107,30 @@ resource "aws_iam_policy" "terraform_ci_policy" {
   },
 
   ####################################
-  # APP RUNNER
-  ####################################
-  {
-    Effect = "Allow"
-    Action = [
-      "apprunner:CreateService",
-      "apprunner:DeleteService",
-      "apprunner:DescribeService",
-      "apprunner:UpdateService",
-      "apprunner:ListServices",
-      "apprunner:StartDeployment",
-      "apprunner:PauseService",
-      "apprunner:ResumeService",
-      "apprunner:ListOperations",
-      "apprunner:DescribeOperation"
-    ]
-    Resource = "*"
-  },
+# APP RUNNER – COMPLETE TERRAFORM LIFECYCLE
+####################################
+{
+  Effect = "Allow"
+  Action = [
+    # Service lifecycle
+    "apprunner:CreateService",
+    "apprunner:DeleteService",
+    "apprunner:DescribeService",
+    "apprunner:UpdateService",
+    "apprunner:ListServices",
+    "apprunner:StartDeployment",
+    "apprunner:PauseService",
+    "apprunner:ResumeService",
+    "apprunner:ListOperations",
+    "apprunner:DescribeOperation",
+
+    # Tagging (REQUIRED FOR TERRAFORM)
+    "apprunner:ListTagsForResource",
+    "apprunner:TagResource",
+    "apprunner:UntagResource"
+  ]
+  Resource = "*"
+},
 
   ####################################
   # CLOUDWATCH

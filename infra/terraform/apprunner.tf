@@ -7,7 +7,7 @@ resource "aws_apprunner_service" "autoops" {
     }
 
     image_repository {
-      image_identifier      = "${aws_ecr_repository.autoops.repository_url}:latest"
+      image_identifier = "${aws_ecr_repository.autoops.repository_url}:initial"
       image_repository_type = "ECR"
 
       image_configuration {

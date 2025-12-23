@@ -1,11 +1,11 @@
-name: CI/CD - AutoOps Web App
+name: CI/CD - AutoOps Web App (Infra + App)
 
 on:
   push:
     branches: [ "main" ]
 
 permissions:
-  id-token: write   # REQUIRED for OIDC
+  id-token: write
   contents: read
 
 jobs:
@@ -13,20 +13,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout source
+    - name: Checkout repository
       uses: actions/checkout@v4
 
+    # ----------------------------
+    # AWS Authentication (OIDC)
+    # ----------------------------
     - name: Configure AWS credentials via OIDC
       uses: aws-actions/configure-aws-credentials@v4
       with:
         role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
         aws-region: us-east-1
 
+    # ----------------------------
+    # Terraform - Infra Provisioning
+    # ----------------------------
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      working-directory: infra/terraform
+      run: terraform init
+
+    - name: Terraform Apply
+      working-directory: infra/terraform
+      run: terraform apply -auto-approve
+
+    # ----------------------------
+    # Docker Build & Push
+    # ----------------------------
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build & Push Docker Image
       run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        ECR_REPO="${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/autoops-web"
+
         docker build -t autoops-web app/
-        docker tag autoops-web:latest 605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest
-        docker push 605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest
+        docker tag autoops-web:latest ${ECR_REPO}:latest
+        docker push ${ECR_REPO}:latest
+
+    # ----------------------------
+    # Print App Runner URL
+    # ----------------------------
+    - name: Fetch App Runner URL
+      run: |
+        aws apprunner list-services \
+          --query "ServiceSummaryList[?ServiceName=='autoops-web-app'].ServiceUrl" \
+          --output text

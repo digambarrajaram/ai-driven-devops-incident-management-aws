@@ -3,6 +3,10 @@ name: CI/CD - AutoOps Web App
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "app/**"
+      - "infra/app/**"
+      - ".github/workflows/deploy.yml"
 
 permissions:
   id-token: write
@@ -14,13 +18,13 @@ jobs:
 
     steps:
     # ----------------------------
-    # Checkout
+    # Checkout Code
     # ----------------------------
     - name: Checkout repository
       uses: actions/checkout@v4
 
     # ----------------------------
-    # AWS Auth (OIDC)
+    # AWS Auth via OIDC
     # ----------------------------
     - name: Configure AWS credentials via OIDC
       uses: aws-actions/configure-aws-credentials@v4
@@ -29,25 +33,14 @@ jobs:
         aws-region: us-east-1
 
     # ----------------------------
-    # Terraform (APP INFRA ONLY)
-    # ----------------------------
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
-
-    - name: Terraform Init
-      working-directory: infra/app
-      run: terraform init
-
-    - name: Terraform Apply
-      working-directory: infra/app
-      run: terraform apply -auto-approve
-
-    # ----------------------------
-    # Docker Build & Push
+    # Login to Amazon ECR
     # ----------------------------
     - name: Login to Amazon ECR
       uses: aws-actions/amazon-ecr-login@v2
 
+    # ----------------------------
+    # Build & Push Docker Image (FIRST)
+    # ----------------------------
     - name: Build & Push Docker Image
       run: |
         ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
@@ -58,6 +51,23 @@ jobs:
         docker push ${ECR_REPO}:latest
 
     # ----------------------------
+    # Terraform Setup
+    # ----------------------------
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init (Remote Backend)
+      working-directory: infra/app
+      run: terraform init
+
+    # ----------------------------
+    # Terraform Apply (AFTER IMAGE EXISTS)
+    # ----------------------------
+    - name: Terraform Apply
+      working-directory: infra/app
+      run: terraform apply -auto-approve
+
+    # ----------------------------
     # Output App Runner URL
     # ----------------------------
     - name: Fetch App Runner Service URL
@@ -65,6 +75,3 @@ jobs:
         aws apprunner list-services \
           --query "ServiceSummaryList[?ServiceName=='autoops-web-app'].ServiceUrl" \
           --output text
-
-
-

@@ -76,7 +76,7 @@ resource "aws_iam_policy" "terraform_ci_policy" {
       },
 
       # IAM (ONLY for autoops roles)
-     {
+       {
   Effect = "Allow"
   Action = [
     "iam:CreateRole",
@@ -84,6 +84,7 @@ resource "aws_iam_policy" "terraform_ci_policy" {
     "iam:GetRole",
     "iam:ListRolePolicies",
     "iam:ListAttachedRolePolicies",
+    "iam:ListInstanceProfilesForRole",
     "iam:AttachRolePolicy",
     "iam:DetachRolePolicy",
     "iam:PassRole"

@@ -43,14 +43,14 @@ jobs:
       uses: hashicorp/setup-terraform@v3
 
     - name: Terraform Init (Remote Backend)
-      working-directory: infra/app
+      working-directory: terraform/app
       run: terraform init
 
     # ----------------------------
     # STEP 1: Create ECR Repository ONLY
     # ----------------------------
     - name: Terraform Apply (ECR only)
-      working-directory: infra/app
+      working-directory: terraform/app
       run: terraform apply -target=aws_ecr_repository.autoops -auto-approve
 
     # ----------------------------

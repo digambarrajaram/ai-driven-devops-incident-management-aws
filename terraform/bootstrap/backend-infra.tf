@@ -4,17 +4,16 @@
 
 resource "aws_s3_bucket" "tf_state" {
   bucket = "autoops-terraform-state-605134452604"
+  force_destroy = true
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }
 
 resource "aws_s3_bucket_versioning" "tf_state" {
   bucket = aws_s3_bucket.tf_state.id
 
   versioning_configuration {
-    status = "Enabled"
+     status = "Suspended"
+    
   }
 }
 
@@ -42,7 +41,4 @@ resource "aws_dynamodb_table" "tf_locks" {
     type = "S"
   }
 
-  lifecycle {
-    prevent_destroy = true
-  }
 }

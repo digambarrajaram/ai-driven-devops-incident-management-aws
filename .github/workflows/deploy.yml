@@ -75,7 +75,7 @@ jobs:
     # STEP 4: Apply Remaining Terraform (App Runner, IAM, etc.)
     # ----------------------------
     - name: Terraform Apply (Full Infra)
-      working-directory: infra/app
+      working-directory: terraform/app
       run: terraform apply -auto-approve
 
     # ----------------------------

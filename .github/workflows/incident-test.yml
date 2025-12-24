@@ -1,0 +1,37 @@
+name: Incident Simulation Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "App Runner base URL (no trailing slash)"
+        required: true
+      test_case:
+        description: "Select incident test case"
+        required: true
+        type: choice
+        options:
+          - error
+          - concurrency
+          - slow-burn
+          - mixed
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run incident test
+      env:
+        TARGET_URL: ${{ github.event.inputs.target_url }}
+      run: |
+        chmod +x scripts/*.sh
+
+        case "${{ github.event.inputs.test_case }}" in
+          error) ./scripts/error_test.sh ;;
+          concurrency) ./scripts/concurrency_test.sh ;;
+          slow-burn) ./scripts/slow_burn.sh ;;
+          mixed) ./scripts/mixed_test.sh ;;
+        esac

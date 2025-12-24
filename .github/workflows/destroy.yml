@@ -24,9 +24,9 @@ jobs:
       uses: hashicorp/setup-terraform@v3
 
     - name: Terraform Init
-      working-directory: infra/app
+      working-directory: terraform/app
       run: terraform init
 
     - name: Terraform Destroy
-      working-directory: infra/app
+      working-directory: terraform/app
       run: terraform destroy -auto-approve

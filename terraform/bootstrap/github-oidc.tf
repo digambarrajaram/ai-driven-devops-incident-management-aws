@@ -19,7 +19,7 @@ resource "aws_iam_role" "github_actions" {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
           }
           StringLike = {
-            "token.actions.githubusercontent.com:sub" = "repo:digambarrajaram/ai-driven-devops-incident-management-aws:*"
+            "token.actions.githubusercontent.com:sub" = "repo:digambarrajaram/AI-Driven-DevOps-Incident-Management-on-AWS-DevOps-Agent-Evaluation-:*"
           }
         }
       }

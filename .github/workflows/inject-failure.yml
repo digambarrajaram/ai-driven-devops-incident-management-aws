@@ -1,0 +1,25 @@
+name: Inject Failure (Incident Simulation)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  inject-failure:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
+        aws-region: us-east-1
+
+    - name: Enable FAIL_MODE (runtime failure)
+      run: |
+        aws lambda update-function-configuration \
+          --function-name autoops-lambda \
+          --environment Variables={FAIL_MODE=true}

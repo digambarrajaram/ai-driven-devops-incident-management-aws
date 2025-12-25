@@ -1,0 +1,46 @@
+name: Deploy AutoOps Lambda
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "app/lambda_handler.py"
+      - "terraform/lambda/**"
+      - ".github/workflows/deploy-lambda.yml"
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: autoops-lambda
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials (OIDC)
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
+        aws-region: us-east-1
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+
+    - name: Terraform Init
+      working-directory: terraform/lambda
+      run: terraform init
+
+    - name: Terraform Apply (Deploy Lambda + API Gateway)
+      working-directory: terraform/lambda
+      run: terraform apply -auto-approve
+
+    - name: Output API URL
+      working-directory: terraform/lambda
+      run: terraform output api_url

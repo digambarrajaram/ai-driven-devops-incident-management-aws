@@ -1,15 +1,35 @@
-- name: Rollback (disable failure mode)
-  run: |
-    SERVICE_NAME="autoops-web-app"
+name: Rollback AutoOps Service
 
-    SERVICE_ARN=$(aws apprunner list-services \
-      --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" \
-      --output text)
+on:
+  workflow_dispatch:
 
-    aws apprunner update-service \
-      --service-arn "$SERVICE_ARN" \
-      --instance-configuration '{
-        "EnvironmentVariables": {
-          "FAIL_MODE": "false"
-        }
-      }'
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
+        aws-region: us-east-1
+
+    - name: Disable FAIL_MODE
+      run: |
+        SERVICE_NAME="autoops-web-app"
+
+        SERVICE_ARN=$(aws apprunner list-services \
+          --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" \
+          --output text)
+
+        aws apprunner update-service \
+          --service-arn "$SERVICE_ARN" \
+          --instance-configuration '{
+            "EnvironmentVariables": {
+              "FAIL_MODE": "false"
+            }
+          }'

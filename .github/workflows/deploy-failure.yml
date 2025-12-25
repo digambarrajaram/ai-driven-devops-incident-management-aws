@@ -1,25 +1,35 @@
-- name: Inject failure via App Runner env
-  run: |
-    SERVICE_NAME="autoops-web-app"
+name: Deploy Failure (Incident Simulation)
 
-    SERVICE_ARN=$(aws apprunner list-services \
-      --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" \
-      --output text)
+on:
+  workflow_dispatch:
 
-    aws apprunner update-service \
-      --service-arn "$SERVICE_ARN" \
-      --source-configuration '{
-        "ImageRepository": {
-          "ImageIdentifier": "605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest",
-          "ImageRepositoryType": "ECR"
-        },
-        "AutoDeploymentsEnabled": true,
-        "AuthenticationConfiguration": {
-          "AccessRoleArn": "arn:aws:iam::605134452604:role/autoops-apprunner-role"
-        }
-      }' \
-      --instance-configuration '{
-        "EnvironmentVariables": {
-          "FAIL_MODE": "true"
-        }
-      }'
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  inject-failure:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
+        aws-region: us-east-1
+
+    - name: Enable FAIL_MODE via App Runner
+      run: |
+        SERVICE_NAME="autoops-web-app"
+
+        SERVICE_ARN=$(aws apprunner list-services \
+          --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" \
+          --output text)
+
+        aws apprunner update-service \
+          --service-arn "$SERVICE_ARN" \
+          --instance-configuration '{
+            "EnvironmentVariables": {
+              "FAIL_MODE": "true"
+            }
+          }'

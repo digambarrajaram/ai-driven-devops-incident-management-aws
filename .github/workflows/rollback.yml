@@ -1,0 +1,31 @@
+name: Rollback to Stable Version
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
+        aws-region: us-east-1
+
+    - name: Login to ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Rollback latest to stable
+      run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        ECR="${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/autoops-web"
+
+        docker pull ${ECR}:stable
+        docker tag ${ECR}:stable ${ECR}:latest
+        docker push ${ECR}:latest

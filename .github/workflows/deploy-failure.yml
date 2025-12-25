@@ -1,38 +1,25 @@
-name: Deploy Failing Version (Test Incident)
+- name: Inject failure via App Runner env
+  run: |
+    SERVICE_NAME="autoops-web-app"
 
-on:
-  workflow_dispatch:
+    SERVICE_ARN=$(aws apprunner list-services \
+      --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" \
+      --output text)
 
-permissions:
-  id-token: write
-  contents: read
-
-jobs:
-  deploy-failure:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
-        aws-region: us-east-1
-
-    - name: Login to ECR
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Build BAD image
-      run: |
-        docker build -t autoops-web:bad \
-          --build-arg FAIL_MODE=true \
-          -f app/Dockerfile .
-
-    - name: Push BAD image as latest
-      run: |
-        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        ECR="${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/autoops-web"
-
-        docker tag autoops-web:bad ${ECR}:latest
-        docker push ${ECR}:latest
+    aws apprunner update-service \
+      --service-arn "$SERVICE_ARN" \
+      --source-configuration '{
+        "ImageRepository": {
+          "ImageIdentifier": "605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest",
+          "ImageRepositoryType": "ECR"
+        },
+        "AutoDeploymentsEnabled": true,
+        "AuthenticationConfiguration": {
+          "AccessRoleArn": "arn:aws:iam::605134452604:role/autoops-apprunner-role"
+        }
+      }' \
+      --instance-configuration '{
+        "EnvironmentVariables": {
+          "FAIL_MODE": "true"
+        }
+      }'

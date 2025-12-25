@@ -1,31 +1,15 @@
-name: Rollback to Stable Version
+- name: Rollback (disable failure mode)
+  run: |
+    SERVICE_NAME="autoops-web-app"
 
-on:
-  workflow_dispatch:
+    SERVICE_ARN=$(aws apprunner list-services \
+      --query "ServiceSummaryList[?ServiceName=='${SERVICE_NAME}'].ServiceArn" \
+      --output text)
 
-permissions:
-  id-token: write
-  contents: read
-
-jobs:
-  rollback:
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
-        aws-region: us-east-1
-
-    - name: Login to ECR
-      uses: aws-actions/amazon-ecr-login@v2
-
-    - name: Rollback latest to stable
-      run: |
-        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        ECR="${ACCOUNT_ID}.dkr.ecr.us-east-1.amazonaws.com/autoops-web"
-
-        docker pull ${ECR}:stable
-        docker tag ${ECR}:stable ${ECR}:latest
-        docker push ${ECR}:latest
+    aws apprunner update-service \
+      --service-arn "$SERVICE_ARN" \
+      --instance-configuration '{
+        "EnvironmentVariables": {
+          "FAIL_MODE": "false"
+        }
+      }'

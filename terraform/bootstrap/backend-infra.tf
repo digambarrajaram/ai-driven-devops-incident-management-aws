@@ -3,7 +3,7 @@
 ############################################
 
 resource "aws_s3_bucket" "tf_state" {
-  bucket        = "autoops-terraform-state-605134452604"
+  bucket        = "autoops-terraform-state-<AWS Account ID>"
   force_destroy = true
 
 }

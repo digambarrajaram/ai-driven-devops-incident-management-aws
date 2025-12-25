@@ -18,7 +18,7 @@ jobs:
         role-to-assume: arn:aws:iam::605134452604:role/github-actions-autoops-role
         aws-region: us-east-1
 
-    - name: Enable FAIL_MODE via App Runner
+    - name: Enable FAIL_MODE via App Runner (Correct)
       run: |
         SERVICE_NAME="autoops-web-app"
 
@@ -28,8 +28,16 @@ jobs:
 
         aws apprunner update-service \
           --service-arn "$SERVICE_ARN" \
-          --instance-configuration '{
-            "EnvironmentVariables": {
-              "FAIL_MODE": "true"
-            }
+          --source-configuration '{
+            "ImageRepository": {
+              "ImageIdentifier": "605134452604.dkr.ecr.us-east-1.amazonaws.com/autoops-web:latest",
+              "ImageRepositoryType": "ECR",
+              "ImageConfiguration": {
+                "Port": "8080",
+                "RuntimeEnvironmentVariables": {
+                  "FAIL_MODE": "true"
+                }
+              }
+            },
+            "AutoDeploymentsEnabled": true
           }'
